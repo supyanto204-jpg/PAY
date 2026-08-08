@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Webhook Receiver</title>
+</head>
+<body>
+    <h1>📡 Webhook Receiver</h1>
+    <pre id="log"></pre>
+
+    <script>
+        // Webhook handler di client-side
+        // Catatan: Ini hanya simulasi, webhook asli harus dari server
+
+        const log = document.getElementById('log');
+
+        // Simulasi menerima webhook dari URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const event = urlParams.get('event');
+        const data = urlParams.get('data');
+
+        if (event && data) {
+            const payload = {
+                event: event,
+                data: JSON.parse(decodeURIComponent(data))
+            };
+
+            log.innerHTML = `
+                ✅ Webhook Received!\n
+                Time: ${new Date().toLocaleString('id-ID')}\n
+                Event: ${payload.event}\n
+                Data: ${JSON.stringify(payload.data, null, 2)}
+            `;
+
+            // Kirim notifikasi ke bot via Telegram API
+            const BOT_TOKEN = 'YOUR_BOT_TOKEN';
+            const ADMIN_ID = 'YOUR_ADMIN_ID';
+
+            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: ADMIN_ID,
+                    text: `💰 *PAYMENT RECEIVED!*\n\nQRIS ID: ${payload.data.qris_id}\nAmount: Rp ${payload.data.amount.toLocaleString('id-ID')}`,
+                    parse_mode: 'Markdown'
+                })
+            });
+
+            // Simpan ke localStorage
+            let logs = JSON.parse(localStorage.getItem('webhook_logs') || '[]');
+            logs.push(payload);
+            localStorage.setItem('webhook_logs', JSON.stringify(logs));
+        } else {
+            // Tampilkan logs dari localStorage
+            const logs = JSON.parse(localStorage.getItem('webhook_logs') || '[]');
+            if (logs.length > 0) {
+                log.innerHTML = logs.map(l => 
+                    `[${new Date().toLocaleString('id-ID')}] ${l.event}: ${JSON.stringify(l.data)}`
+                ).join('\n\n');
+            } else {
+                log.innerHTML = '⏳ Menunggu webhook...';
+            }
+        }
+    </script>
+</body>
+</html>
