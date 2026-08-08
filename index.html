@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QRIS Payment Gateway - Qrispy</title>
+    <style>
+        /* ============================================================
+           RESET & GLOBAL
+           ============================================================ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: #0b0b1a;
+            color: #e8e8f0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* ============================================================
+           CONTAINER
+           ============================================================ */
+        .app {
+            max-width: 1200px;
+            width: 100%;
+            background: #14142b;
+            border-radius: 28px;
+            padding: 32px 36px 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        /* ============================================================
+           HEADER
+           ============================================================ */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            padding-bottom: 20px;
+            margin-bottom: 28px;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .logo-icon {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(145deg, #6c5ce7, #a29bfe);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 700;
+            color: #fff;
+            box-shadow: 0 6px 16px rgba(108, 92, 231, 0.35);
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.4px;
+            background: linear-gradient(135deg, #ffffff 40%, #a29bfe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo-text span {
+            font-weight: 400;
+            color: #6c5ce7;
+            -webkit-text-fill-color: #6c5ce7;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(108, 92, 231, 0.12);
+            padding: 8px 18px;
+            border-radius: 40px;
+            border: 1px solid rgba(108, 92, 231, 0.2);
+            font-size: 13px;
+            font-weight: 500;
+            color: #c8c0ff;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #00d4aa;
+            animation: pulse-dot 2s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.5;
+                transform: scale(0.85);
+            }
+        }
+
+        /* ============================================================
+           TABS
+           ============================================================ */
+        .tabs {
+            display: flex;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 16px;
+            padding: 6px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 12px 20px;
+            border: none;
+            background: transparent;
+            color: #8888aa;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            text-align: center;
+        }
+
+        .tab-btn:hover {
+            color: #d0d0e8;
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .tab-btn.active {
+            background: rgba(108, 92, 231, 0.2);
+            color: #c8c0ff;
+            box-shadow: 0 4px 12px rgba(108, 92, 231, 0.15);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeUp 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ============================================================
+           CARDS & GRID
+           ============================================================ */
+        .card {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 18px;
+            padding: 24px 28px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            margin-bottom: 20px;
+            transition: border-color 0.2s;
+        }
+
+        .card:hover {
+            border-color: rgba(108, 92, 231, 0.2);
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #c8c0ff;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-title .icon {
+            font-size: 20px;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        /* ============================================================
+           FORM ELEMENTS
+           ============================================================ */
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: #a8a8c8;
+            margin-bottom: 6px;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            color: #e8e8f0;
+            font-size: 14px;
+            transition: all 0.2s;
+            outline: none;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: #6c5ce7;
+            box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.15);
+            background: rgba(255, 255, 255, 0.07);
+        }
+
+        input::placeholder,
+        textarea::placeholder {
+            color: #555577;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        /* ============================================================
+           BUTTONS
+           ============================================================ */
+        .btn {
+            padding: 12px 28px;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(145deg, #6c5ce7, #5a4bd1);
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(108, 92, 231, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px rgba(108, 92, 231, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-success {
+            background: linear-gradient(145deg, #00d4aa, #00b894);
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(0, 212, 170, 0.3);
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px rgba(0, 212, 170, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(145deg, #ff6b6b, #e74c4c);
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(255, 107, 107, 0.25);
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px rgba(255, 107, 107, 0.35);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: #a8a8c8;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-outline:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* ============================================================
+           QRIS DISPLAY
+           ============================================================ */
+        .qris-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 16px;
+            border: 1px dashed rgba(108, 92, 231, 0.2);
+        }
+
+        .qris-display img {
+            max-width: 280px;
+            width: 100%;
+            border-radius: 12px;
+            background: #fff;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+
+        .qris-info {
+            text-align: center;
+            font-size: 14px;
+            color: #a8a8c8;
+        }
+
+        .qris-info strong {
+            color: #e8e8f0;
+        }
+
+        /* ============================================================
+           WEBHOOK LOGS
+           ============================================================ */
+        .log-entry {
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            border-left: 3px solid #6c5ce7;
+            margin-bottom: 8px;
+            font-size: 13px;
+            font-family: 'Courier New', monospace;
+            color: #a8a8c8;
+            word-break: break-all;
+        }
+
+        .log-entry .time {
+            color: #555577;
+            font-size: 11px;
+        }
+
+        .log-entry .event {
+            color: #00d4aa;
+            font-weight: 600;
+        }
+
+        .log-entry .payload {
+            color: #c8c0ff;
+            margin-top: 4px;
+            font-size: 12px;
+        }
+
+        .log-empty {
+            text-align: center;
+            color: #555577;
+            padding: 40px 20px;
+        }
+
+        /* ============================================================
+           RESPONSIVE
+           ============================================================ */
+        @media (max-width: 768px) {
+            .app {
+                padding: 20px 16px;
+            }
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            .header {
+                flex-direction: column;
+                align-items: stretch;
+                text-align: center;
+            }
+            .logo-area {
+                justify-content: center;
+            }
+            .status-badge {
+                justify-content: center;
+            }
+            .tab-btn {
+                min-width: 80px;
+                font-size: 12px;
+                padding: 10px 14px;
+            }
+            .qris-display img {
+                max-width: 200px;
+            }
+        }
+
+        /* ============================================================
+           SCROLLBAR
+           ============================================================ */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(108, 92, 231, 0.3);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(108, 92, 231, 0.5);
+        }
+
+        /* ============================================================
+           TOAST / ALERT
+           ============================================================ */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #1e1e3a;
+            border: 1px solid rgba(108, 92, 231, 0.3);
+            border-radius: 16px;
+            padding: 16px 24px;
+            color: #e8e8f0;
+            font-size: 14px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+            transform: translateY(120%);
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            max-width: 400px;
+            z-index: 999;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+        }
+
+        .toast.success {
+            border-color: #00d4aa;
+        }
+        .toast.error {
+            border-color: #ff6b6b;
+        }
+
+        /* ============================================================
+           LOADING SPINNER
+           ============================================================ */
+        .spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #6c5ce7;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ============================================================
+    TOAST NOTIFICATION
+    ============================================================ -->
+    <div class="toast" id="toast"></div>
+
+    <!-- ============================================================
+    MAIN APP
+    ============================================================ -->
+    <div class="app">
+
+        <!-- HEADER -->
+        <div class="header">
+            <div class="logo-area">
+                <div class="logo-icon">QR</div>
+                <div class="logo-text">Qrispy <span>Gateway</span></div>
+            </div>
+            <div class="status-badge">
+                <span class="status-dot"></span>
+                <span>Connected</span>
+                <span style="opacity:0.4;margin:0 4px;">|</span>
+                <span style="font-weight:400;color:#8888aa;">v1.0</span>
+            </div>
+        </div>
+
+        <!-- TABS -->
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="tab-generate">💰 Generate QRIS</button>
+            <button class="tab-btn" data-tab="tab-status">🔍 Cek Status</button>
+            <button class="tab-btn" data-tab="tab-webhook">📡 Webhook</button>
+            <button class="tab-btn" data-tab="tab-balance">💳 Balance</button>
+        </div>
+
+        <!-- ============================================================
+        TAB 1: GENERATE QRIS
+        ============================================================ -->
+        <div class="tab-content active" id="tab-generate">
+
+            <div class="grid-2">
+
+                <!-- Left: Form -->
+                <div>
+                    <div class="card">
+                        <div class="card-title">
+                            <span class="icon">📝</span> Buat QRIS Payment
+                        </div>
+
+                        <div class="form-group">
+                            <label>Nominal (IDR)</label>
+                            <input type="number" id="amount" placeholder="50000" value="50000" min="1000" step="1000" />
+                        </div>
+
+                        <div class="form-group">
+                            <label>Payment Reference (Optional)</label>
+                            <input type="text" id="paymentRef" placeholder="Order-123 atau UserID-123" />
+                        </div>
+
+                        <div class="form-group">
+                            <label>Return URL (Optional)</label>
+                            <input type="url" id="returnUrl" placeholder="https://yoursite.com/success" />
+                        </div>
+
+                        <button class="btn btn-primary" id="btnGenerate" style="width:100%;">
+                            🚀 Generate QRIS
+                        </button>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="card">
+                        <div class="card-title">
+                            <span class="icon">⚡</span> Quick Actions
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-outline" onclick="setAmount(10000)">Rp 10.000</button>
+                            <button class="btn btn-outline" onclick="setAmount(25000)">Rp 25.000</button>
+                            <button class="btn btn-outline" onclick="setAmount(50000)">Rp 50.000</button>
+                            <button class="btn btn-outline" onclick="setAmount(100000)">Rp 100.000</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: QRIS Display -->
+                <div>
+                    <div class="card" style="height:100%;display:flex;flex-direction:column;">
+                        <div class="card-title">
+                            <span class="icon">📱</span> QRIS Code
+                        </div>
+
+                        <div class="qris-display" id="qrisDisplay" style="flex:1;justify-content:center;min-height:320px;">
+                            <div style="color:#555577;text-align:center;">
+                                <div style="font-size:48px;margin-bottom:12px;">📸</div>
+                                <p>Belum ada QRIS</p>
+                                <p style="font-size:12px;">Generate QRIS untuk mulai</p>
+                            </div>
+                        </div>
+
+                        <div id="qrisInfo" style="margin-top:12px;text-align:center;font-size:13px;color:#8888aa;">
+                            <span id="qrisIdDisplay">-</span> &bull;
+                            <span id="qrisAmountDisplay">Rp 0</span> &bull;
+                            <span id="qrisStatusDisplay">-</span>
+                        </div>
+
+                        <div class="btn-group" style="justify-content:center;margin-top:12px;">
+                            <button class="btn btn-success" id="btnCheckStatus" disabled>
+                                🔍 Cek Status
+                            </button>
+                            <button class="btn btn-danger" id="btnCancel" disabled>
+                                ❌ Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- ============================================================
+        TAB 2: CEK STATUS
+        ============================================================ -->
+        <div class="tab-content" id="tab-status">
+
+            <div class="grid-2">
+
+                <div>
+                    <div class="card">
+                        <div class="card-title">
+                            <span class="icon">🔍</span> Cek Status QRIS
+                        </div>
+
+                        <div class="form-group">
+                            <label>QRIS ID</label>
+                            <input type="text" id="checkQrisId" placeholder="Contoh: 9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d" />
+                        </div>
+
+                        <button class="btn btn-primary" id="btnCheckStatusManual" style="width:100%;">
+                            🔍 Cek Status
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="card">
+                        <div class="card-title">
+                            <span class="icon">📊</span> Hasil Status
+                        </div>
+                        <div id="statusResult" style="color:#8888aa;font-size:14px;min-height:120px;">
+                            <p style="color:#555577;">Masukkan QRIS ID dan klik Cek Status</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- ============================================================
+        TAB 3: WEBHOOK
+        ============================================================ -->
+        <div class="tab-content" id="tab-webhook">
+
+            <div class="grid-2">
+
+                <!-- Webhook Config -->
+                <div>
+                    <div class="card">
+                        <div class="card-title">
+                            <span class="icon">⚙️</span> Webhook Configuration
+                        </div>
+
+                        <div class="form-group">
+                            <label>Webhook URL</label>
+                            <input type="url" id="webhookUrl" value="https://yantoip.vercel.app/api/webhook" readonly style="color:#6c5ce7;" />
+                            <small style="color:#555577;font-size:11px;">Gunakan HTTPS untuk keamanan</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Webhook Secret</label>
+                            <div style="display:flex;gap:8px;">
+                                <input type="password" id="webhookSecret" value="whsec_AVu3fFLUBVMLjo6OdCWq7I3qdQ2CJ6e2" readonly style="flex:1;" />
+                                <button class="btn btn-outline" onclick="toggleSecret()" style="padding:12px 16px;">👁️</button>
+                            </div>
+                            <small style="color:#555577;font-size:11px;">Digunakan untuk verifikasi X-Qrispy-Signature</small>
+                        </div>
+
+                        <div class="btn-group">
+                            <button class="btn btn-success" id="btnSaveWebhook">
+                                💾 Save Settings
+                            </button>
+                            <button class="btn btn-outline" id="btnTestWebhook">
+                                📡 Test Webhook
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Webhook Logs -->
+                    <div class="card">
+                        <div class="card-title">
+                            <span class="icon">📋</span> Webhook Logs
+                            <span style="margin-left:auto;font-size:12px;font-weight:400;color:#555577;" id="logCount">0 events</span>
+                        </div>
+
+                        <div id="webhookLogs" style="max-height:300px;overflow-y:auto;">
+                            <div class="log-empty">Belum ada webhook diterima</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Webhook Payload Info -->
+                <div>
+                    <div class="card">
+                        <div class="card-title">
+                            <span class="icon">📦</span> Webhook Payload Example
+                        </div>
+
+                        <div style="background:rgba(0,0,0,0.3);border-radius:12px;padding:16px;overflow-x:auto;">
+                            <pre style="color:#a8a8c8;font-size:12px;font-family:'Courier New',monospace;white-space:pre-wrap;word-break:break-all;">
+{
+  "event": "payment.received",
+  "data": {
+    "qris_id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+    "amount": 50000,
+    "received_amount": 50000,
+    "payment_reference": "Order-123",
+    "paid_at": "2026-01-14T03:00:00+00:00",
+    "unique_id": 123
+  }
+}</pre>
+                        </div>
+
+                        <div style="margin-top:16px;padding:12px 16px;background:rgba(108,92,231,0.08);border-radius:10px;border-left:3px solid #6c5ce7;">
+                            <p style="font-size:13px;color:#a8a8c8;">
+                                <strong style="color:#c8c0ff;">🔒 Verifikasi Signature:</strong>
+                                <br />
+                                <code style="font-size:11px;color:#6c5ce7;">
+                                    hash_hmac('sha256', $payload, $secret) === X-Qrispy-Signature
+                                </code>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Webhook Test Result -->
+                    <div class="card" id="webhookTestResult" style="display:none;">
+                        <div class="card-title">
+                            <span class="icon">📡</span> Test Result
+                        </div>
+                        <div id="testResultContent"></div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- ============================================================
+        TAB 4: BALANCE
+        ============================================================ -->
+        <div class="tab-content" id="tab-balance">
+
+            <div class="grid-2">
+
+                <div>
+                    <div class="card">
+                        <div class="card-title">
+                            <span class="icon">💳</span> Cek Balance
+                        </div>
+
+                        <button class="btn btn-primary" id="btnCheckBalance" style="width:100%;">
+                            💰 Cek Saldo
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="card">
+                        <div class="card-title">
+                            <span class="icon">📊</span> Balance Info
+                        </div>
+                        <div id="balanceResult" style="color:#8888aa;font-size:14px;min-height:80px;">
+                            <p style="color:#555577;">Klik "Cek Saldo" untuk melihat</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ============================================================
+    JAVASCRIPT
+    ============================================================ -->
+    <script>
+        // ============================================================
+        // CONFIGURATION
+        // ============================================================
+        const CONFIG = {
+            API_URL: 'https://api.qrispy.id',
+            API_TOKEN: 'cki_YirGyxN4IsJQzK4Ujjw8AulSzN3icVtmye0xt12kXCdMYMyv',
+            WEBHOOK_SECRET: 'whsec_AVu3fFLUBVMLjo6OdCWq7I3qdQ2CJ6e2',
+            WEBHOOK_URL: 'https://yantoip.vercel.app/api/webhook'
+        };
+
+        // State
+        let currentQrisId = null;
+        let currentAmount = 0;
+        let webhookLogs = [];
+
+        // ============================================================
+        // DOM REFS
+        // ============================================================
+        const $ = (id) => document.getElementById(id);
+        const amountInput = $('amount');
+        const paymentRefInput = $('paymentRef');
+        const returnUrlInput = $('returnUrl');
+        const btnGenerate = $('btnGenerate');
+        const qrisDisplay = $('qrisDisplay');
+        const qrisIdDisplay = $('qrisIdDisplay');
+        const qrisAmountDisplay = $('qrisAmountDisplay');
+        const qrisStatusDisplay = $('qrisStatusDisplay');
+        const btnCheckStatus = $('btnCheckStatus');
+        const btnCancel = $('btnCancel');
+        const checkQrisId = $('checkQrisId');
+        const btnCheckStatusManual = $('btnCheckStatusManual');
+        const statusResult = $('statusResult');
+        const webhookLogsDiv = $('webhookLogs');
+        const logCount = $('logCount');
+        const btnSaveWebhook = $('btnSaveWebhook');
+        const btnTestWebhook = $('btnTestWebhook');
+        const btnCheckBalance = $('btnCheckBalance');
+        const balanceResult = $('balanceResult');
+        const toast = $('toast');
+
+        // ============================================================
+        // TOAST NOTIFICATION
+        // ============================================================
+        let toastTimeout;
+
+        function showToast(message, type = 'info') {
+            toast.textContent = message;
+            toast.className = 'toast ' + type;
+            clearTimeout(toastTimeout);
+            // Force reflow
+            void toast.offsetWidth;
+            toast.classList.add('show');
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 5000);
+        }
+
+        // ============================================================
+        // API HELPER
+        // ============================================================
+        async function apiRequest(endpoint, method = 'GET', body = null) {
+            const url = CONFIG.API_URL + endpoint;
+            const headers = {
+                'X-API-Token': CONFIG.API_TOKEN,
+                'Content-Type': 'application/json'
+            };
+
+            const options = {
+                method,
+                headers
+            };
+
+            if (body) {
+                options.body = JSON.stringify(body);
+            }
+
+            try {
+                const response = await fetch(url, options);
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('API Error:', error);
+                return {
+                    status: 'error',
+                    message: error.message
+                };
+            }
+        }
+
+        // ============================================================
+        // GENERATE QRIS
+        // ============================================================
+        async function generateQRIS() {
+            const amount = parseInt(amountInput.value);
+            const paymentRef = paymentRefInput.value.trim() || null;
+            const returnUrl = returnUrlInput.value.trim() || null;
+
+            if (!amount || amount < 1000) {
+                showToast('❌ Minimal nominal Rp 1.000', 'error');
+                return;
+            }
+
+            btnGenerate.disabled = true;
+            btnGenerate.innerHTML = '<span class="spinner"></span> Generating...';
+
+            try {
+                const body = { amount };
+                if (paymentRef) body.payment_reference = paymentRef;
+                if (returnUrl) body.return_url = returnUrl;
+
+                const result = await apiRequest('/api/payment/qris/generate', 'POST', body);
+
+                if (result.status === 'success') {
+                    const data = result.data;
+                    currentQrisId = data.qris_id;
+                    currentAmount = data.amount;
+
+                    // Tampilkan QRIS
+                    qrisDisplay.innerHTML = `
+                        <img src="${data.qris_image_url}" alt="QRIS Code" />
+                        <div class="qris-info">
+                            <strong>${data.amount.toLocaleString('id-ID')}</strong>
+                            <span style="margin:0 6px;">•</span>
+                            <span style="color:#6c5ce7;">${data.qris_id}</span>
+                        </div>
+                    `;
+
+                    qrisIdDisplay.textContent = data.qris_id;
+                    qrisAmountDisplay.textContent = 'Rp ' + data.amount.toLocaleString('id-ID');
+                    qrisStatusDisplay.textContent = '⏳ pending';
+                    qrisStatusDisplay.style.color = '#f39c12';
+
+                    btnCheckStatus.disabled = false;
+                    btnCancel.disabled = false;
+
+                    showToast(`✅ QRIS generated! ID: ${data.qris_id}`, 'success');
+
+                    // Auto check status setiap 5 detik
+                    if (window.statusInterval) {
+                        clearInterval(window.statusInterval);
+                    }
+                    let checkCount = 0;
+                    window.statusInterval = setInterval(async () => {
+                        checkCount++;
+                        if (checkCount > 120) { // 10 menit
+                            clearInterval(window.statusInterval);
+                            return;
+                        }
+                        const statusResult = await apiRequest(`/api/payment/qris/${currentQrisId}/status`);
+                        if (statusResult.status === 'success') {
+                            const status = statusResult.data.status;
+                            if (status === 'paid' || status === 'success') {
+                                clearInterval(window.statusInterval);
+                                qrisStatusDisplay.textContent = '✅ PAID';
+                                qrisStatusDisplay.style.color = '#00d4aa';
+                                showToast(`💰 Payment received! Rp ${currentAmount.toLocaleString('id-ID')}`,
+                                'success');
+                                btnCheckStatus.disabled = true;
+                                btnCancel.disabled = true;
+                            } else if (status === 'expired' || status === 'failed') {
+                                clearInterval(window.statusInterval);
+                                qrisStatusDisplay.textContent = '❌ ' + status.toUpperCase();
+                                qrisStatusDisplay.style.color = '#ff6b6b';
+                                btnCheckStatus.disabled = true;
+                                btnCancel.disabled = true;
+                            }
+                        }
+                    }, 5000);
+
+                } else {
+                    showToast('❌ ' + (result.message || 'Gagal generate QRIS'), 'error');
+                }
+            } catch (error) {
+                showToast('❌ Error: ' + error.message, 'error');
+            } finally {
+                btnGenerate.disabled = false;
+                btnGenerate.innerHTML = '🚀 Generate QRIS';
+            }
+        }
+
+        // ============================================================
+        // CHECK STATUS
+        // ============================================================
+        async function checkStatus(qrisId) {
+            if (!qrisId) {
+                showToast('❌ Masukkan QRIS ID', 'error');
+                return;
+            }
+
+            statusResult.innerHTML = '<p style="color:#555577;">⏳ Checking...</p>';
+
+            const result = await apiRequest(`/api/payment/qris/${qrisId}/status`);
+
+            if (result.status === 'success') {
+                const data = result.data;
+                const statusMap = {
+                    'pending': '⏳ Pending',
+                    'paid': '✅ Paid',
+                    'success': '✅ Success',
+                    'expired': '❌ Expired',
+                    'failed': '❌ Failed',
+                    'cancelled': '❌ Cancelled'
+                };
+
+                statusResult.innerHTML = `
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:14px;">
+                        <div style="color:#8888aa;">Status</div>
+                        <div style="color:#e8e8f0;font-weight:600;">${statusMap[data.status] || data.status}</div>
+                        <div style="color:#8888aa;">Amount</div>
+                        <div style="color:#e8e8f0;">Rp ${(data.amount || 0).toLocaleString('id-ID')}</div>
+                        <div style="color:#8888aa;">QRIS ID</div>
+                        <div style="color:#6c5ce7;font-size:12px;word-break:break-all;">${data.qris_id || qrisId}</div>
+                        ${data.paid_at ? `
+                            <div style="color:#8888aa;">Paid At</div>
+                            <div style="color:#00d4aa;">${new Date(data.paid_at).toLocaleString('id-ID')}</div>
+                        ` : ''}
+                        ${data.payment_reference ? `
+                            <div style="color:#8888aa;">Reference</div>
+                            <div style="color:#a8a8c8;">${data.payment_reference}</div>
+                        ` : ''}
+                    </div>
+                `;
+                showToast(`✅ Status: ${data.status}`, 'success');
+            } else {
+                statusResult.innerHTML = `
+                    <p style="color:#ff6b6b;">❌ ${result.message || 'Gagal cek status'}</p>
+                `;
+                showToast('❌ ' + (result.message || 'Gagal cek status'), 'error');
+            }
+        }
+
+        // ============================================================
+        // CANCEL QRIS
+        // ============================================================
+        async function cancelQRIS() {
+            if (!currentQrisId) {
+                showToast('❌ Tidak ada QRIS aktif', 'error');
+                return;
+            }
+
+            if (!confirm(`Batalkan QRIS ${currentQrisId}?`)) return;
+
+            btnCancel.disabled = true;
+            btnCancel.innerHTML = '<span class="spinner"></span>';
+
+            try {
+                const result = await apiRequest(`/api/payment/qris/${currentQrisId}/cancel`, 'POST');
+
+                if (result.status === 'success') {
+                    showToast('✅ QRIS dibatalkan', 'success');
+                    qrisStatusDisplay.textContent = '❌ CANCELLED';
+                    qrisStatusDisplay.style.color = '#ff6b6b';
+                    btnCheckStatus.disabled = true;
+                    btnCancel.disabled = true;
+                    if (window.statusInterval) {
+                        clearInterval(window.statusInterval);
+                    }
+                } else {
+                    showToast('❌ ' + (result.message || 'Gagal batalkan'), 'error');
+                }
+            } catch (error) {
+                showToast('❌ Error: ' + error.message, 'error');
+            } finally {
+                btnCancel.disabled = false;
+                btnCancel.innerHTML = '❌ Cancel';
+            }
+        }
+
+        // ============================================================
+        // CHECK BALANCE
+        // ============================================================
+        async function checkBalance() {
+            btnCheckBalance.disabled = true;
+            btnCheckBalance.innerHTML = '<span class="spinner"></span> Loading...';
+
+            try {
+                const result = await apiRequest('/api/payment/balance');
+
+                if (result.status === 'success') {
+                    const data = result.data;
+                    balanceResult.innerHTML = `
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                            <div>
+                                <div style="color:#8888aa;font-size:12px;">Balance</div>
+                                <div style="font-size:28px;font-weight:700;color:#00d4aa;">
+                                    Rp ${(data.balance || 0).toLocaleString('id-ID')}
+                                </div>
+                            </div>
+                            <div>
+                                <div style="color:#8888aa;font-size:12px;">Merchant</div>
+                                <div style="color:#e8e8f0;font-weight:600;">${data.merchant_name || '-'}</div>
+                                <div style="color:#8888aa;font-size:12px;">ID: ${data.merchant_id || '-'}</div>
+                            </div>
+                            <div style="grid-column:span 2;color:#8888aa;font-size:12px;">
+                                Currency: ${data.currency || 'IDR'}
+                            </div>
+                        </div>
+                    `;
+                    showToast(`💰 Balance: Rp ${(data.balance || 0).toLocaleString('id-ID')}`, 'success');
+                } else {
+                    balanceResult.innerHTML = `
+                        <p style="color:#ff6b6b;">❌ ${result.message || 'Gagal cek balance'}</p>
+                    `;
+                    showToast('❌ ' + (result.message || 'Gagal cek balance'), 'error');
+                }
+            } catch (error) {
+                showToast('❌ Error: ' + error.message, 'error');
+                balanceResult.innerHTML = `<p style="color:#ff6b6b;">❌ Error: ${error.message}</p>`;
+            } finally {
+                btnCheckBalance.disabled = false;
+                btnCheckBalance.innerHTML = '💰 Cek Saldo';
+            }
+        }
+
+        // ============================================================
+        // WEBHOOK: SIMULATE RECEIVE
+        // ============================================================
+        function simulateWebhook() {
+            const payload = {
+                event: 'payment.received',
+                data: {
+                    qris_id: '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d',
+                    amount: 50000,
+                    received_amount: 50000,
+                    payment_reference: 'Order-123',
+                    paid_at: new Date().toISOString(),
+                    unique_id: Math.floor(Math.random() * 1000)
+                }
+            };
+
+            addWebhookLog(payload);
+            showToast('📡 Webhook test received!', 'success');
+
+            // Show test result
+            const testResult = $('webhookTestResult');
+            testResult.style.display = 'block';
+            $('testResultContent').innerHTML = `
+                <div style="background:rgba(0,0,0,0.3);border-radius:10px;padding:12px;overflow-x:auto;">
+                    <pre style="color:#00d4aa;font-size:12px;font-family:'Courier New',monospace;white-space:pre-wrap;word-break:break-all;">
+✅ Webhook diterima!
+
+${JSON.stringify(payload, null, 2)}
+                    </pre>
+                </div>
+                <p style="font-size:12px;color:#555577;margin-top:8px;">
+                    🔒 Signature: hash_hmac('sha256', payload, secret) = valid
+                </p>
+            `;
+        }
+
+        // ============================================================
+        // WEBHOOK: ADD LOG
+        // ============================================================
+        function addWebhookLog(payload) {
+            webhookLogs.unshift({
+                time: new Date().toLocaleString('id-ID'),
+                event: payload.event || 'unknown',
+                payload: payload
+            });
+
+            if (webhookLogs.length > 50) webhookLogs.pop();
+            renderWebhookLogs();
+        }
+
+        function renderWebhookLogs() {
+            if (webhookLogs.length === 0) {
+                webhookLogsDiv.innerHTML = '<div class="log-empty">Belum ada webhook diterima</div>';
+                logCount.textContent = '0 events';
+                return;
+            }
+
+            let html = '';
+            webhookLogs.forEach(log => {
+                html += `
+                    <div class="log-entry">
+                        <div>
+                            <span class="time">[${log.time}]</span>
+                            <span class="event">${log.event}</span>
+                        </div>
+                        <div class="payload">${JSON.stringify(log.payload).substring(0, 200)}${JSON.stringify(log.payload).length > 200 ? '...' : ''}</div>
+                    </div>
+                `;
+            });
+
+            webhookLogsDiv.innerHTML = html;
+            logCount.textContent = webhookLogs.length + ' events';
+        }
+
+        // ============================================================
+        // WEBHOOK: SAVE SETTINGS
+        // ============================================================
+        function saveWebhookSettings() {
+            const url = $('webhookUrl').value;
+            const secret = $('webhookSecret').value;
+
+            // Simulate save
+            showToast('✅ Webhook settings saved!', 'success');
+
+            // Log
+            console.log('Webhook URL:', url);
+            console.log('Webhook Secret:', secret);
+        }
+
+        // ============================================================
+        // WEBHOOK: TOGGLE SECRET
+        // ============================================================
+        function toggleSecret() {
+            const input = $('webhookSecret');
+            if (input.type === 'password') {
+                input.type = 'text';
+            } else {
+                input.type = 'password';
+            }
+        }
+
+        // ============================================================
+        // QUICK AMOUNT
+        // ============================================================
+        function setAmount(val) {
+            amountInput.value = val;
+        }
+
+        // ============================================================
+        // TABS
+        // ============================================================
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Remove active from all
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+                // Add active to clicked
+                this.classList.add('active');
+                const tabId = this.dataset.tab;
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+
+        // ============================================================
+        // EVENT LISTENERS
+        // ============================================================
+        btnGenerate.addEventListener('click', generateQRIS);
+        btnCheckStatus.addEventListener('click', () => checkStatus(currentQrisId));
+        btnCancel.addEventListener('click', cancelQRIS);
+        btnCheckStatusManual.addEventListener('click', () => checkStatus(checkQrisId.value.trim()));
+        btnCheckBalance.addEventListener('click', checkBalance);
+        btnSaveWebhook.addEventListener('click', saveWebhookSettings);
+        btnTestWebhook.addEventListener('click', simulateWebhook);
+
+        // Enter key for generate
+        amountInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') generateQRIS();
+        });
+
+        paymentRefInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') generateQRIS();
+        });
+
+        // Enter key for check status
+        checkQrisId.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') checkStatus(checkQrisId.value.trim());
+        });
+
+        // ============================================================
+        // SIMULATE WEBHOOK RECEIVER (untuk demo)
+        // ============================================================
+        // Cek apakah ada webhook yang masuk (simulasi)
+        // Di production, ini akan di-handle oleh server backend
+        console.log('🌐 Webhook URL:', CONFIG.WEBHOOK_URL);
+        console.log('🔑 Webhook Secret:', CONFIG.WEBHOOK_SECRET);
+
+        // ============================================================
+        // INIT - Add sample log
+        // ============================================================
+        addWebhookLog({
+            event: 'system.init',
+            data: {
+                message: 'Webhook receiver ready',
+                timestamp: new Date().toISOString()
+            }
+        });
+
+        console.log('🚀 Qrispy Gateway ready!');
+        console.log('📡 Webhook URL:', CONFIG.WEBHOOK_URL);
+        console.log('🔑 API Token:', CONFIG.API_TOKEN.substring(0, 10) + '...');
+
+        // ============================================================
+        // CHECK INITIAL BALANCE ON LOAD
+        // ============================================================
+        setTimeout(() => {
+            checkBalance();
+        }, 1000);
+    </script>
+
+</body>
+</html>
