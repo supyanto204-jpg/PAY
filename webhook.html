@@ -3,65 +3,683 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Webhook Receiver</title>
+    <title>Webhook Receiver - QRIS Payment</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: #0b0b1a;
+            color: #e8e8f0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .app {
+            max-width: 900px;
+            width: 100%;
+            background: #14142b;
+            border-radius: 28px;
+            padding: 32px 36px 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            padding-bottom: 20px;
+            margin-bottom: 28px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ffffff 40%, #a29bfe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(108, 92, 231, 0.12);
+            padding: 8px 18px;
+            border-radius: 40px;
+            border: 1px solid rgba(108, 92, 231, 0.2);
+            font-size: 13px;
+            color: #c8c0ff;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #00d4aa;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.85); }
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 18px;
+            padding: 24px 28px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #c8c0ff;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-title .icon {
+            font-size: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: #a8a8c8;
+            margin-bottom: 6px;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            color: #e8e8f0;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        input:focus, textarea:focus {
+            border-color: #6c5ce7;
+            box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.15);
+        }
+
+        input[readonly] {
+            color: #6c5ce7;
+            cursor: default;
+        }
+
+        input[type="password"] {
+            color: #ff6b6b;
+        }
+
+        .btn {
+            padding: 12px 28px;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(145deg, #6c5ce7, #5a4bd1);
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(108, 92, 231, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px rgba(108, 92, 231, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(145deg, #00d4aa, #00b894);
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(0, 212, 170, 0.3);
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px rgba(0, 212, 170, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(145deg, #ff6b6b, #e74c4c);
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(255, 107, 107, 0.25);
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px rgba(255, 107, 107, 0.35);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: #a8a8c8;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-outline:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+
+        .log-entry {
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            border-left: 3px solid #6c5ce7;
+            margin-bottom: 8px;
+            font-size: 13px;
+            font-family: 'Courier New', monospace;
+            color: #a8a8c8;
+            word-break: break-all;
+        }
+
+        .log-entry .time {
+            color: #555577;
+            font-size: 11px;
+        }
+
+        .log-entry .event {
+            color: #00d4aa;
+            font-weight: 600;
+        }
+
+        .log-entry .payload {
+            color: #c8c0ff;
+            margin-top: 4px;
+            font-size: 12px;
+        }
+
+        .log-entry .signature {
+            color: #f39c12;
+            font-size: 11px;
+            margin-top: 4px;
+        }
+
+        .log-entry .signature-valid {
+            color: #00d4aa;
+        }
+
+        .log-entry .signature-invalid {
+            color: #ff6b6b;
+        }
+
+        .log-empty {
+            text-align: center;
+            color: #555577;
+            padding: 40px 20px;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #1e1e3a;
+            border: 1px solid rgba(108, 92, 231, 0.3);
+            border-radius: 16px;
+            padding: 16px 24px;
+            color: #e8e8f0;
+            font-size: 14px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+            transform: translateY(120%);
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            max-width: 400px;
+            z-index: 999;
+        }
+
+        .toast.show { transform: translateY(0); }
+        .toast.success { border-color: #00d4aa; }
+        .toast.error { border-color: #ff6b6b; }
+        .toast.warning { border-color: #f39c12; }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .secret-box {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 12px 16px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #ff6b6b;
+            word-break: break-all;
+            border: 1px solid rgba(255, 107, 107, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            .app { padding: 20px 16px; }
+            .grid-2 { grid-template-columns: 1fr; }
+            .header { flex-direction: column; text-align: center; }
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #6c5ce7;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 <body>
-    <h1>📡 Webhook Receiver</h1>
-    <pre id="log"></pre>
+
+    <div class="toast" id="toast"></div>
+
+    <div class="app">
+
+        <!-- HEADER -->
+        <div class="header">
+            <div class="logo">📡 Webhook Receiver</div>
+            <div class="status-badge">
+                <span class="status-dot"></span>
+                <span id="statusText">Ready</span>
+            </div>
+        </div>
+
+        <!-- WEBHOOK INFO -->
+        <div class="card">
+            <div class="card-title">
+                <span class="icon">🔑</span> Webhook Configuration
+            </div>
+
+            <div class="grid-2">
+                <div>
+                    <div class="form-group">
+                        <label>Webhook URL</label>
+                        <input type="url" id="webhookUrl" value="https://pay-nu.vercel.app/webhook.html" readonly />
+                    </div>
+                </div>
+                <div>
+                    <div class="form-group">
+                        <label>Webhook Secret</label>
+                        <div style="display:flex;gap:8px;">
+                            <input type="password" id="webhookSecret" value="whsec_AVu3fFLUBVMLjo6OdCWq7I3qdQ2CJ6e2" readonly style="flex:1;" />
+                            <button class="btn btn-outline" onclick="toggleSecret()" style="padding:12px 16px;">👁️</button>
+                        </div>
+                        <small style="color:#555577;font-size:11px;">
+                            🔒 Gunakan untuk verifikasi X-Qrispy-Signature
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="secret-box">
+                🔑 WEBHOOK SECRET: <span id="secretDisplay">whsec_AVu3fFLUBVMLjo6OdCWq7I3qdQ2CJ6e2</span>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn btn-success" id="btnTestWebhook">📡 Test Webhook</button>
+                <button class="btn btn-danger" id="btnClearLogs">🗑️ Clear Logs</button>
+            </div>
+        </div>
+
+        <!-- WEBHOOK LOGS -->
+        <div class="card">
+            <div class="card-title">
+                <span class="icon">📋</span> Webhook Logs
+                <span style="margin-left:auto;font-size:12px;font-weight:400;color:#555577;" id="logCount">0 events</span>
+            </div>
+
+            <div id="webhookLogs" style="max-height:400px;overflow-y:auto;">
+                <div class="log-empty">Belum ada webhook diterima</div>
+            </div>
+        </div>
+
+        <!-- PAYLOAD EXAMPLE -->
+        <div class="card">
+            <div class="card-title">
+                <span class="icon">📦</span> Payload Example
+            </div>
+
+            <div style="background:rgba(0,0,0,0.3);border-radius:12px;padding:16px;overflow-x:auto;">
+                <pre style="color:#a8a8c8;font-size:12px;font-family:'Courier New',monospace;white-space:pre-wrap;word-break:break-all;">
+{
+  "event": "payment.received",
+  "data": {
+    "qris_id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+    "amount": 50000,
+    "received_amount": 50000,
+    "payment_reference": "Order-123",
+    "paid_at": "2026-01-14T03:00:00+00:00",
+    "unique_id": 123
+  }
+}</pre>
+            </div>
+
+            <div style="margin-top:16px;padding:12px 16px;background:rgba(108,92,231,0.08);border-radius:10px;border-left:3px solid #6c5ce7;">
+                <p style="font-size:13px;color:#a8a8c8;">
+                    <strong style="color:#c8c0ff;">🔒 Verifikasi Signature:</strong>
+                    <br />
+                    <code style="font-size:11px;color:#6c5ce7;">
+                        hash_hmac('sha256', $payload, 'whsec_AVu3fFLUBVMLjo6OdCWq7I3qdQ2CJ6e2') === X-Qrispy-Signature
+                    </code>
+                </p>
+            </div>
+        </div>
+
+    </div>
 
     <script>
-        // Webhook handler di client-side
-        // Catatan: Ini hanya simulasi, webhook asli harus dari server
+        // ============================================================
+        // KONFIGURASI
+        // ============================================================
+        const WEBHOOK_SECRET = 'whsec_AVu3fFLUBVMLjo6OdCWq7I3qdQ2CJ6e2';
+        const WEBHOOK_URL = 'https://pay-nu.vercel.app/webhook.html';
 
-        const log = document.getElementById('log');
+        // State
+        let webhookLogs = [];
+        let logCounter = 0;
 
-        // Simulasi menerima webhook dari URL parameter
-        const urlParams = new URLSearchParams(window.location.search);
-        const event = urlParams.get('event');
-        const data = urlParams.get('data');
+        // ============================================================
+        // DOM REFS
+        // ============================================================
+        const $ = (id) => document.getElementById(id);
+        const toast = $('toast');
+        const webhookLogsDiv = $('webhookLogs');
+        const logCount = $('logCount');
+        const statusText = $('statusText');
+        const secretDisplay = $('secretDisplay');
 
-        if (event && data) {
-            const payload = {
-                event: event,
-                data: JSON.parse(decodeURIComponent(data))
-            };
+        // ============================================================
+        // TOAST
+        // ============================================================
+        let toastTimeout;
 
-            log.innerHTML = `
-                ✅ Webhook Received!\n
-                Time: ${new Date().toLocaleString('id-ID')}\n
-                Event: ${payload.event}\n
-                Data: ${JSON.stringify(payload.data, null, 2)}
-            `;
+        function showToast(msg, type = 'info') {
+            toast.textContent = msg;
+            toast.className = 'toast ' + type;
+            clearTimeout(toastTimeout);
+            void toast.offsetWidth;
+            toast.classList.add('show');
+            toastTimeout = setTimeout(() => toast.classList.remove('show'), 5000);
+        }
 
-            // Kirim notifikasi ke bot via Telegram API
-            const BOT_TOKEN = 'YOUR_BOT_TOKEN';
-            const ADMIN_ID = 'YOUR_ADMIN_ID';
-
-            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    chat_id: ADMIN_ID,
-                    text: `💰 *PAYMENT RECEIVED!*\n\nQRIS ID: ${payload.data.qris_id}\nAmount: Rp ${payload.data.amount.toLocaleString('id-ID')}`,
-                    parse_mode: 'Markdown'
-                })
-            });
-
-            // Simpan ke localStorage
-            let logs = JSON.parse(localStorage.getItem('webhook_logs') || '[]');
-            logs.push(payload);
-            localStorage.setItem('webhook_logs', JSON.stringify(logs));
-        } else {
-            // Tampilkan logs dari localStorage
-            const logs = JSON.parse(localStorage.getItem('webhook_logs') || '[]');
-            if (logs.length > 0) {
-                log.innerHTML = logs.map(l => 
-                    `[${new Date().toLocaleString('id-ID')}] ${l.event}: ${JSON.stringify(l.data)}`
-                ).join('\n\n');
+        // ============================================================
+        // TOGGLE SECRET
+        // ============================================================
+        function toggleSecret() {
+            const input = $('webhookSecret');
+            if (input.type === 'password') {
+                input.type = 'text';
+                secretDisplay.textContent = WEBHOOK_SECRET;
             } else {
-                log.innerHTML = '⏳ Menunggu webhook...';
+                input.type = 'password';
+                secretDisplay.textContent = '••••••••••••••••••••••••••••••••••••••••';
             }
         }
+
+        // ============================================================
+        // VERIFY SIGNATURE
+        // ============================================================
+        async function verifySignature(payload, signature) {
+            // Simulasi verifikasi HMAC-SHA256
+            // Di production, gunakan crypto.subtle atau library
+            const encoder = new TextEncoder();
+            const data = encoder.encode(JSON.stringify(payload));
+            const key = encoder.encode(WEBHOOK_SECRET);
+
+            try {
+                const cryptoKey = await crypto.subtle.importKey(
+                    'raw',
+                    key,
+                    { name: 'HMAC', hash: 'SHA-256' },
+                    false,
+                    ['sign']
+                );
+
+                const signatureBuffer = await crypto.subtle.sign('HMAC', cryptoKey, data);
+                const signatureArray = Array.from(new Uint8Array(signatureBuffer));
+                const signatureHex = signatureArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+                return signatureHex === signature;
+            } catch (error) {
+                console.error('Verification error:', error);
+                // Fallback: simple string comparison (tidak aman untuk production)
+                return signature === 'valid_signature';
+            }
+        }
+
+        // ============================================================
+        // PROCESS WEBHOOK
+        // ============================================================
+        async function processWebhook(payload, signature) {
+            const isValid = await verifySignature(payload, signature);
+
+            // Log
+            addWebhookLog(payload, signature, isValid);
+
+            if (isValid) {
+                statusText.textContent = '✅ Verified';
+                statusText.style.color = '#00d4aa';
+                showToast('✅ Webhook verified & processed!', 'success');
+
+                // Kirim notifikasi ke bot (via Telegram API)
+                if (payload.event === 'payment.received') {
+                    const data = payload.data;
+                    const BOT_TOKEN = 'YOUR_BOT_TOKEN';
+                    const ADMIN_ID = 'YOUR_ADMIN_ID';
+
+                    try {
+                        await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                chat_id: ADMIN_ID,
+                                text: `💰 *PAYMENT RECEIVED!*\n\nQRIS ID: ${data.qris_id}\nAmount: Rp ${(data.amount || 0).toLocaleString('id-ID')}\nReference: ${data.payment_reference || '-'}\nPaid At: ${data.paid_at}`,
+                                parse_mode: 'Markdown'
+                            })
+                        });
+                    } catch (e) {
+                        console.error('Gagal kirim notif:', e);
+                    }
+                }
+            } else {
+                statusText.textContent = '❌ Invalid Signature';
+                statusText.style.color = '#ff6b6b';
+                showToast('❌ Invalid webhook signature!', 'error');
+            }
+        }
+
+        // ============================================================
+        // ADD WEBHOOK LOG
+        // ============================================================
+        function addWebhookLog(payload, signature, isValid) {
+            webhookLogs.unshift({
+                time: new Date().toLocaleString('id-ID'),
+                event: payload.event || 'unknown',
+                payload: payload,
+                signature: signature || 'No signature',
+                isValid: isValid !== undefined ? isValid : null
+            });
+
+            if (webhookLogs.length > 50) webhookLogs.pop();
+            renderWebhookLogs();
+        }
+
+        function renderWebhookLogs() {
+            if (webhookLogs.length === 0) {
+                webhookLogsDiv.innerHTML = '<div class="log-empty">Belum ada webhook diterima</div>';
+                logCount.textContent = '0 events';
+                return;
+            }
+
+            let html = '';
+            webhookLogs.forEach(log => {
+                const statusIcon = log.isValid === true ? '✅' : log.isValid === false ? '❌' : '⏳';
+                const statusClass = log.isValid === true ? 'signature-valid' : log.isValid === false ?
+                    'signature-invalid' : '';
+
+                html += `
+                    <div class="log-entry">
+                        <div>
+                            <span class="time">[${log.time}]</span>
+                            <span class="event">${log.event}</span>
+                            <span style="margin-left:8px;font-size:11px;color:#555577;">#${webhookLogs.indexOf(log) + 1}</span>
+                        </div>
+                        <div class="payload">${JSON.stringify(log.payload, null, 2).substring(0, 300)}${JSON.stringify(log.payload, null, 2).length > 300 ? '...' : ''}</div>
+                        <div class="signature">
+                            ${statusIcon} Signature: <span class="${statusClass}">${log.signature ? log.signature.substring(0, 20) + '...' : 'No signature'}</span>
+                            ${log.isValid !== null ? `(${log.isValid ? 'Valid' : 'Invalid'})` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+
+            webhookLogsDiv.innerHTML = html;
+            logCount.textContent = webhookLogs.length + ' events';
+        }
+
+        // ============================================================
+        // SIMULATE WEBHOOK
+        // ============================================================
+        function simulateWebhook() {
+            const payload = {
+                event: 'payment.received',
+                data: {
+                    qris_id: '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d',
+                    amount: 50000,
+                    received_amount: 50000,
+                    payment_reference: 'Order-123',
+                    paid_at: new Date().toISOString(),
+                    unique_id: Math.floor(Math.random() * 1000)
+                }
+            };
+
+            // Simulasi signature (valid)
+            const signature = 'valid_signature';
+
+            statusText.textContent = '⏳ Processing...';
+            statusText.style.color = '#f39c12';
+
+            processWebhook(payload, signature);
+        }
+
+        // ============================================================
+        // CLEAR LOGS
+        // ============================================================
+        function clearLogs() {
+            if (webhookLogs.length === 0) return;
+            if (!confirm('Hapus semua log?')) return;
+
+            webhookLogs = [];
+            renderWebhookLogs();
+            showToast('🗑️ Logs cleared', 'warning');
+        }
+
+        // ============================================================
+        // URL PARAMETER HANDLER (Untuk menerima webhook dari Qrispy)
+        // ============================================================
+        function handleURLParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const event = urlParams.get('event');
+            const data = urlParams.get('data');
+            const signature = urlParams.get('signature');
+
+            if (event && data) {
+                try {
+                    const payload = {
+                        event: event,
+                        data: JSON.parse(decodeURIComponent(data))
+                    };
+
+                    // Process webhook
+                    processWebhook(payload, signature || '');
+                    showToast('📡 Webhook received from URL!', 'success');
+
+                    // Hapus query param dari URL
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                } catch (error) {
+                    showToast('❌ Error parsing webhook: ' + error.message, 'error');
+                }
+            }
+        }
+
+        // ============================================================
+        // EVENT LISTENERS
+        // ============================================================
+        $('btnTestWebhook').addEventListener('click', simulateWebhook);
+        $('btnClearLogs').addEventListener('click', clearLogs);
+
+        // ============================================================
+        // INIT
+        // ============================================================
+        // Tampilkan secret
+        secretDisplay.textContent = '••••••••••••••••••••••••••••••••••••••••';
+
+        // Add initial log
+        addWebhookLog({
+            event: 'system.init',
+            data: {
+                message: 'Webhook receiver ready',
+                secret: WEBHOOK_SECRET.substring(0, 10) + '...',
+                timestamp: new Date().toISOString()
+            }
+        });
+
+        // Handle URL params
+        handleURLParams();
+
+        console.log('📡 Webhook Receiver ready!');
+        console.log('🔑 Webhook Secret:', WEBHOOK_SECRET);
+        console.log('📋 Webhook URL:', WEBHOOK_URL);
+
+        // Update status
+        statusText.textContent = '✅ Ready';
+        statusText.style.color = '#00d4aa';
     </script>
+
 </body>
 </html>
