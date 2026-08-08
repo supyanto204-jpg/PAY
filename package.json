@@ -1,0 +1,24 @@
+{
+  "name": "pay-nu",
+  "version": "1.0.0",
+  "description": "QRIS Payment Gateway - Webhook & Dashboard",
+  "main": "api/webhook.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel --prod",
+    "start": "node api/webhook.js"
+  },
+  "keywords": [
+    "qris",
+    "payment",
+    "webhook",
+    "qrispy",
+    "vercel"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "vercel": "^32.0.0"
+  }
+}
