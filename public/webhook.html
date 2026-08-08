@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Webhook Receiver - QRIS Payment</title>
+    <title>Webhook Monitor - QRIS Payment</title>
     <style>
         * {
             margin: 0;
@@ -16,15 +16,12 @@
             background: #0b0b1a;
             color: #e8e8f0;
             min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             padding: 20px;
         }
 
         .app {
-            max-width: 900px;
-            width: 100%;
+            max-width: 1100px;
+            margin: 0 auto;
             background: #14142b;
             border-radius: 28px;
             padding: 32px 36px 40px;
@@ -94,8 +91,10 @@
             gap: 10px;
         }
 
-        .card-title .icon {
-            font-size: 20px;
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
         }
 
         .form-group {
@@ -110,7 +109,7 @@
             margin-bottom: 6px;
         }
 
-        input, textarea {
+        input {
             width: 100%;
             padding: 12px 16px;
             background: rgba(255, 255, 255, 0.05);
@@ -122,7 +121,7 @@
             transition: all 0.2s;
         }
 
-        input:focus, textarea:focus {
+        input:focus {
             border-color: #6c5ce7;
             box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.15);
         }
@@ -130,10 +129,6 @@
         input[readonly] {
             color: #6c5ce7;
             cursor: default;
-        }
-
-        input[type="password"] {
-            color: #ff6b6b;
         }
 
         .btn {
@@ -190,13 +185,6 @@
 
         .btn-outline:hover {
             background: rgba(255, 255, 255, 0.05);
-            border-color: rgba(255, 255, 255, 0.2);
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none !important;
         }
 
         .btn-group {
@@ -232,19 +220,20 @@
             color: #c8c0ff;
             margin-top: 4px;
             font-size: 12px;
+            max-height: 100px;
+            overflow-y: auto;
         }
 
         .log-entry .signature {
-            color: #f39c12;
             font-size: 11px;
             margin-top: 4px;
         }
 
-        .log-entry .signature-valid {
+        .log-entry .valid {
             color: #00d4aa;
         }
 
-        .log-entry .signature-invalid {
+        .log-entry .invalid {
             color: #ff6b6b;
         }
 
@@ -276,12 +265,6 @@
         .toast.error { border-color: #ff6b6b; }
         .toast.warning { border-color: #f39c12; }
 
-        .grid-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
         .secret-box {
             background: rgba(0, 0, 0, 0.3);
             border-radius: 10px;
@@ -293,24 +276,50 @@
             border: 1px solid rgba(255, 107, 107, 0.2);
         }
 
+        .webhook-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .webhook-status.pending {
+            background: rgba(243, 156, 18, 0.2);
+            color: #f39c12;
+        }
+
+        .webhook-status.success {
+            background: rgba(0, 212, 170, 0.2);
+            color: #00d4aa;
+        }
+
+        .webhook-status.error {
+            background: rgba(255, 107, 107, 0.2);
+            color: #ff6b6b;
+        }
+
+        #webhookLogs {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        #webhookLogs::-webkit-scrollbar {
+            width: 6px;
+        }
+        #webhookLogs::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 10px;
+        }
+        #webhookLogs::-webkit-scrollbar-thumb {
+            background: rgba(108, 92, 231, 0.3);
+            border-radius: 10px;
+        }
+
         @media (max-width: 768px) {
             .app { padding: 20px 16px; }
             .grid-2 { grid-template-columns: 1fr; }
             .header { flex-direction: column; text-align: center; }
-        }
-
-        .spinner {
-            display: inline-block;
-            width: 18px;
-            height: 18px;
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            border-top-color: #6c5ce7;
-            border-radius: 50%;
-            animation: spin 0.7s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -322,14 +331,16 @@
 
         <!-- HEADER -->
         <div class="header">
-            <div class="logo">📡 Webhook Receiver</div>
+            <div class="logo">📡 Webhook Monitor</div>
             <div class="status-badge">
                 <span class="status-dot"></span>
-                <span id="statusText">Ready</span>
+                <span id="statusText">Connected</span>
+                <span style="opacity:0.4;margin:0 4px;">|</span>
+                <span id="lastWebhook" style="font-weight:400;color:#8888aa;">No webhook yet</span>
             </div>
         </div>
 
-        <!-- WEBHOOK INFO -->
+        <!-- WEBHOOK CONFIG -->
         <div class="card">
             <div class="card-title">
                 <span class="icon">🔑</span> Webhook Configuration
@@ -339,7 +350,7 @@
                 <div>
                     <div class="form-group">
                         <label>Webhook URL</label>
-                        <input type="url" id="webhookUrl" value="https://pay-nu.vercel.app/webhook.html" readonly />
+                        <input type="url" id="webhookUrl" value="https://pay-nu.vercel.app/api/webhook" readonly />
                     </div>
                 </div>
                 <div>
@@ -349,20 +360,46 @@
                             <input type="password" id="webhookSecret" value="whsec_AVu3fFLUBVMLjo6OdCWq7I3qdQ2CJ6e2" readonly style="flex:1;" />
                             <button class="btn btn-outline" onclick="toggleSecret()" style="padding:12px 16px;">👁️</button>
                         </div>
-                        <small style="color:#555577;font-size:11px;">
-                            🔒 Gunakan untuk verifikasi X-Qrispy-Signature
-                        </small>
                     </div>
                 </div>
             </div>
 
             <div class="secret-box">
-                🔑 WEBHOOK SECRET: <span id="secretDisplay">whsec_AVu3fFLUBVMLjo6OdCWq7I3qdQ2CJ6e2</span>
+                🔑 SECRET: <span id="secretDisplay">••••••••••••••••••••••••••••••••••••••••</span>
             </div>
 
             <div class="btn-group">
                 <button class="btn btn-success" id="btnTestWebhook">📡 Test Webhook</button>
                 <button class="btn btn-danger" id="btnClearLogs">🗑️ Clear Logs</button>
+                <button class="btn btn-primary" id="btnRefresh">🔄 Refresh</button>
+            </div>
+        </div>
+
+        <!-- STATISTIK -->
+        <div class="grid-2">
+            <div class="card">
+                <div class="card-title">📊 Statistics</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+                    <div>
+                        <div style="color:#8888aa;font-size:11px;">Total</div>
+                        <div style="font-size:24px;font-weight:700;color:#c8c0ff;" id="totalCount">0</div>
+                    </div>
+                    <div>
+                        <div style="color:#8888aa;font-size:11px;">Valid</div>
+                        <div style="font-size:24px;font-weight:700;color:#00d4aa;" id="validCount">0</div>
+                    </div>
+                    <div>
+                        <div style="color:#8888aa;font-size:11px;">Invalid</div>
+                        <div style="font-size:24px;font-weight:700;color:#ff6b6b;" id="invalidCount">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">💰 Last Payment</div>
+                <div id="lastPayment" style="color:#8888aa;font-size:14px;min-height:50px;">
+                    <span style="color:#555577;">Belum ada payment</span>
+                </div>
             </div>
         </div>
 
@@ -373,7 +410,7 @@
                 <span style="margin-left:auto;font-size:12px;font-weight:400;color:#555577;" id="logCount">0 events</span>
             </div>
 
-            <div id="webhookLogs" style="max-height:400px;overflow-y:auto;">
+            <div id="webhookLogs">
                 <div class="log-empty">Belum ada webhook diterima</div>
             </div>
         </div>
@@ -381,7 +418,7 @@
         <!-- PAYLOAD EXAMPLE -->
         <div class="card">
             <div class="card-title">
-                <span class="icon">📦</span> Payload Example
+                <span class="icon">📦</span> Expected Payload
             </div>
 
             <div style="background:rgba(0,0,0,0.3);border-radius:12px;padding:16px;overflow-x:auto;">
@@ -398,16 +435,6 @@
   }
 }</pre>
             </div>
-
-            <div style="margin-top:16px;padding:12px 16px;background:rgba(108,92,231,0.08);border-radius:10px;border-left:3px solid #6c5ce7;">
-                <p style="font-size:13px;color:#a8a8c8;">
-                    <strong style="color:#c8c0ff;">🔒 Verifikasi Signature:</strong>
-                    <br />
-                    <code style="font-size:11px;color:#6c5ce7;">
-                        hash_hmac('sha256', $payload, 'whsec_AVu3fFLUBVMLjo6OdCWq7I3qdQ2CJ6e2') === X-Qrispy-Signature
-                    </code>
-                </p>
-            </div>
         </div>
 
     </div>
@@ -417,11 +444,12 @@
         // KONFIGURASI
         // ============================================================
         const WEBHOOK_SECRET = 'whsec_AVu3fFLUBVMLjo6OdCWq7I3qdQ2CJ6e2';
-        const WEBHOOK_URL = 'https://pay-nu.vercel.app/webhook.html';
+        const WEBHOOK_URL = 'https://pay-nu.vercel.app/api/webhook';
 
         // State
         let webhookLogs = [];
-        let logCounter = 0;
+        let stats = { total: 0, valid: 0, invalid: 0 };
+        let lastPayment = null;
 
         // ============================================================
         // DOM REFS
@@ -431,7 +459,12 @@
         const webhookLogsDiv = $('webhookLogs');
         const logCount = $('logCount');
         const statusText = $('statusText');
+        const lastWebhook = $('lastWebhook');
         const secretDisplay = $('secretDisplay');
+        const totalCount = $('totalCount');
+        const validCount = $('validCount');
+        const invalidCount = $('invalidCount');
+        const lastPaymentDiv = $('lastPayment');
 
         // ============================================================
         // TOAST
@@ -465,8 +498,6 @@
         // VERIFY SIGNATURE
         // ============================================================
         async function verifySignature(payload, signature) {
-            // Simulasi verifikasi HMAC-SHA256
-            // Di production, gunakan crypto.subtle atau library
             const encoder = new TextEncoder();
             const data = encoder.encode(JSON.stringify(payload));
             const key = encoder.encode(WEBHOOK_SECRET);
@@ -487,7 +518,6 @@
                 return signatureHex === signature;
             } catch (error) {
                 console.error('Verification error:', error);
-                // Fallback: simple string comparison (tidak aman untuk production)
                 return signature === 'valid_signature';
             }
         }
@@ -498,58 +528,54 @@
         async function processWebhook(payload, signature) {
             const isValid = await verifySignature(payload, signature);
 
+            // Update stats
+            stats.total++;
+            if (isValid) stats.valid++;
+            else stats.invalid++;
+
+            // Update last payment
+            if (payload.event === 'payment.received' && isValid) {
+                lastPayment = payload.data;
+                lastPaymentDiv.innerHTML = `
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
+                        <span style="color:#8888aa;">Amount</span>
+                        <span style="color:#00d4aa;font-weight:600;">Rp ${(payload.data.amount || 0).toLocaleString('id-ID')}</span>
+                        <span style="color:#8888aa;">QRIS ID</span>
+                        <span style="color:#6c5ce7;font-size:12px;">${payload.data.qris_id}</span>
+                        <span style="color:#8888aa;">Reference</span>
+                        <span style="color:#a8a8c8;">${payload.data.payment_reference || '-'}</span>
+                    </div>
+                `;
+            }
+
             // Log
             addWebhookLog(payload, signature, isValid);
+            updateStats();
 
-            if (isValid) {
-                statusText.textContent = '✅ Verified';
-                statusText.style.color = '#00d4aa';
-                showToast('✅ Webhook verified & processed!', 'success');
-
-                // Kirim notifikasi ke bot (via Telegram API)
-                if (payload.event === 'payment.received') {
-                    const data = payload.data;
-                    const BOT_TOKEN = 'YOUR_BOT_TOKEN';
-                    const ADMIN_ID = 'YOUR_ADMIN_ID';
-
-                    try {
-                        await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                chat_id: ADMIN_ID,
-                                text: `💰 *PAYMENT RECEIVED!*\n\nQRIS ID: ${data.qris_id}\nAmount: Rp ${(data.amount || 0).toLocaleString('id-ID')}\nReference: ${data.payment_reference || '-'}\nPaid At: ${data.paid_at}`,
-                                parse_mode: 'Markdown'
-                            })
-                        });
-                    } catch (e) {
-                        console.error('Gagal kirim notif:', e);
-                    }
-                }
-            } else {
-                statusText.textContent = '❌ Invalid Signature';
-                statusText.style.color = '#ff6b6b';
-                showToast('❌ Invalid webhook signature!', 'error');
-            }
+            return isValid;
         }
 
         // ============================================================
         // ADD WEBHOOK LOG
         // ============================================================
         function addWebhookLog(payload, signature, isValid) {
-            webhookLogs.unshift({
+            const logEntry = {
+                id: Date.now(),
                 time: new Date().toLocaleString('id-ID'),
                 event: payload.event || 'unknown',
                 payload: payload,
                 signature: signature || 'No signature',
                 isValid: isValid !== undefined ? isValid : null
-            });
+            };
 
+            webhookLogs.unshift(logEntry);
             if (webhookLogs.length > 50) webhookLogs.pop();
-            renderWebhookLogs();
+
+            renderLogs();
+            updateLastWebhook();
         }
 
-        function renderWebhookLogs() {
+        function renderLogs() {
             if (webhookLogs.length === 0) {
                 webhookLogsDiv.innerHTML = '<div class="log-empty">Belum ada webhook diterima</div>';
                 logCount.textContent = '0 events';
@@ -559,8 +585,7 @@
             let html = '';
             webhookLogs.forEach(log => {
                 const statusIcon = log.isValid === true ? '✅' : log.isValid === false ? '❌' : '⏳';
-                const statusClass = log.isValid === true ? 'signature-valid' : log.isValid === false ?
-                    'signature-invalid' : '';
+                const statusClass = log.isValid === true ? 'valid' : log.isValid === false ? 'invalid' : '';
 
                 html += `
                     <div class="log-entry">
@@ -568,11 +593,13 @@
                             <span class="time">[${log.time}]</span>
                             <span class="event">${log.event}</span>
                             <span style="margin-left:8px;font-size:11px;color:#555577;">#${webhookLogs.indexOf(log) + 1}</span>
+                            <span class="webhook-status ${log.isValid === true ? 'success' : log.isValid === false ? 'error' : 'pending'}">
+                                ${log.isValid === true ? 'Valid' : log.isValid === false ? 'Invalid' : 'Pending'}
+                            </span>
                         </div>
                         <div class="payload">${JSON.stringify(log.payload, null, 2).substring(0, 300)}${JSON.stringify(log.payload, null, 2).length > 300 ? '...' : ''}</div>
-                        <div class="signature">
-                            ${statusIcon} Signature: <span class="${statusClass}">${log.signature ? log.signature.substring(0, 20) + '...' : 'No signature'}</span>
-                            ${log.isValid !== null ? `(${log.isValid ? 'Valid' : 'Invalid'})` : ''}
+                        <div class="signature ${statusClass}">
+                            ${statusIcon} Signature: ${log.signature ? log.signature.substring(0, 30) + '...' : 'No signature'}
                         </div>
                     </div>
                 `;
@@ -582,10 +609,25 @@
             logCount.textContent = webhookLogs.length + ' events';
         }
 
+        function updateStats() {
+            totalCount.textContent = stats.total;
+            validCount.textContent = stats.valid;
+            invalidCount.textContent = stats.invalid;
+        }
+
+        function updateLastWebhook() {
+            if (webhookLogs.length > 0) {
+                const last = webhookLogs[0];
+                lastWebhook.textContent = `Last: ${last.time} - ${last.event}`;
+                statusText.textContent = last.isValid ? '✅ Verified' : '⚠️ Pending';
+                statusText.style.color = last.isValid ? '#00d4aa' : '#f39c12';
+            }
+        }
+
         // ============================================================
         // SIMULATE WEBHOOK
         // ============================================================
-        function simulateWebhook() {
+        async function simulateWebhook() {
             const payload = {
                 event: 'payment.received',
                 data: {
@@ -598,13 +640,18 @@
                 }
             };
 
-            // Simulasi signature (valid)
+            // Simulasi signature - pake valid
             const signature = 'valid_signature';
 
-            statusText.textContent = '⏳ Processing...';
-            statusText.style.color = '#f39c12';
+            showToast('📡 Simulating webhook...', 'info');
 
-            processWebhook(payload, signature);
+            const isValid = await processWebhook(payload, signature);
+
+            if (isValid) {
+                showToast('✅ Webhook simulated & verified!', 'success');
+            } else {
+                showToast('❌ Webhook simulation failed!', 'error');
+            }
         }
 
         // ============================================================
@@ -615,36 +662,39 @@
             if (!confirm('Hapus semua log?')) return;
 
             webhookLogs = [];
-            renderWebhookLogs();
+            stats = { total: 0, valid: 0, invalid: 0 };
+            lastPayment = null;
+
+            renderLogs();
+            updateStats();
+            updateLastWebhook();
+            lastPaymentDiv.innerHTML = '<span style="color:#555577;">Belum ada payment</span>';
+
             showToast('🗑️ Logs cleared', 'warning');
         }
 
         // ============================================================
-        // URL PARAMETER HANDLER (Untuk menerima webhook dari Qrispy)
+        // REFRESH
         // ============================================================
-        function handleURLParams() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const event = urlParams.get('event');
-            const data = urlParams.get('data');
-            const signature = urlParams.get('signature');
+        function refresh() {
+            renderLogs();
+            updateStats();
+            updateLastWebhook();
 
-            if (event && data) {
-                try {
-                    const payload = {
-                        event: event,
-                        data: JSON.parse(decodeURIComponent(data))
-                    };
-
-                    // Process webhook
-                    processWebhook(payload, signature || '');
-                    showToast('📡 Webhook received from URL!', 'success');
-
-                    // Hapus query param dari URL
-                    window.history.replaceState({}, document.title, window.location.pathname);
-                } catch (error) {
-                    showToast('❌ Error parsing webhook: ' + error.message, 'error');
-                }
+            if (lastPayment) {
+                lastPaymentDiv.innerHTML = `
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
+                        <span style="color:#8888aa;">Amount</span>
+                        <span style="color:#00d4aa;font-weight:600;">Rp ${(lastPayment.amount || 0).toLocaleString('id-ID')}</span>
+                        <span style="color:#8888aa;">QRIS ID</span>
+                        <span style="color:#6c5ce7;font-size:12px;">${lastPayment.qris_id}</span>
+                        <span style="color:#8888aa;">Reference</span>
+                        <span style="color:#a8a8c8;">${lastPayment.payment_reference || '-'}</span>
+                    </div>
+                `;
             }
+
+            showToast('🔄 Refreshed!', 'success');
         }
 
         // ============================================================
@@ -652,33 +702,67 @@
         // ============================================================
         $('btnTestWebhook').addEventListener('click', simulateWebhook);
         $('btnClearLogs').addEventListener('click', clearLogs);
+        $('btnRefresh').addEventListener('click', refresh);
 
         // ============================================================
-        // INIT
+        // INIT - LOAD FROM LOCALSTORAGE
         // ============================================================
-        // Tampilkan secret
-        secretDisplay.textContent = '••••••••••••••••••••••••••••••••••••••••';
+        function loadFromStorage() {
+            try {
+                const saved = localStorage.getItem('webhook_logs');
+                if (saved) {
+                    const data = JSON.parse(saved);
+                    webhookLogs = data.logs || [];
+                    stats = data.stats || { total: 0, valid: 0, invalid: 0 };
+                    lastPayment = data.lastPayment || null;
 
-        // Add initial log
-        addWebhookLog({
-            event: 'system.init',
-            data: {
-                message: 'Webhook receiver ready',
-                secret: WEBHOOK_SECRET.substring(0, 10) + '...',
-                timestamp: new Date().toISOString()
+                    renderLogs();
+                    updateStats();
+                    updateLastWebhook();
+
+                    if (lastPayment) {
+                        lastPaymentDiv.innerHTML = `
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
+                                <span style="color:#8888aa;">Amount</span>
+                                <span style="color:#00d4aa;font-weight:600;">Rp ${(lastPayment.amount || 0).toLocaleString('id-ID')}</span>
+                                <span style="color:#8888aa;">QRIS ID</span>
+                                <span style="color:#6c5ce7;font-size:12px;">${lastPayment.qris_id}</span>
+                                <span style="color:#8888aa;">Reference</span>
+                                <span style="color:#a8a8c8;">${lastPayment.payment_reference || '-'}</span>
+                            </div>
+                        `;
+                    }
+                }
+            } catch (e) {
+                console.error('Load storage error:', e);
             }
-        });
+        }
 
-        // Handle URL params
-        handleURLParams();
+        function saveToStorage() {
+            try {
+                localStorage.setItem('webhook_logs', JSON.stringify({
+                    logs: webhookLogs,
+                    stats: stats,
+                    lastPayment: lastPayment
+                }));
+            } catch (e) {
+                console.error('Save storage error:', e);
+            }
+        }
 
-        console.log('📡 Webhook Receiver ready!');
-        console.log('🔑 Webhook Secret:', WEBHOOK_SECRET);
+        // Auto save setiap ada perubahan
+        const originalAddLog = addWebhookLog;
+        addWebhookLog = function(payload, signature, isValid) {
+            originalAddLog(payload, signature, isValid);
+            saveToStorage();
+        };
+
+        // Load dari storage
+        loadFromStorage();
+
+        console.log('📡 Webhook Monitor ready!');
+        console.log('🔑 Secret:', WEBHOOK_SECRET);
         console.log('📋 Webhook URL:', WEBHOOK_URL);
-
-        // Update status
-        statusText.textContent = '✅ Ready';
-        statusText.style.color = '#00d4aa';
     </script>
 
 </body>
